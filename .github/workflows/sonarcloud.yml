@@ -1,0 +1,37 @@
+name: "SonarCloud Analysis"
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch: {}
+
+jobs:
+  sonar-scan:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detectar a Raiz do Projeto
+        id: find-root
+        shell: bash
+        run: |
+          PROJECT_DIR="."
+          ALL_PROJECTS=$(find . -maxdepth 3 -name "settings.gradle" -o -name "settings.gradle.kts")
+          if [ -n "$ALL_PROJECTS" ]; then
+            PROJECT_DIR=$(dirname "$(echo "$ALL_PROJECTS" | head -n1)")
+          fi
+          echo "Projeto principal selecionado: $PROJECT_DIR"
+          echo "PROJECT_PATH=$PROJECT_DIR" >> $GITHUB_ENV
+      - name: SonarCloud Scan (Default)
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: ${{ env.PROJECT_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ARGS: >
+            -Dsonar.projectKey=grilo-org_20250730T171520_famorim88_chat-sample
+            -Dsonar.organization=grilo-org
